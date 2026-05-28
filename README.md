@@ -33,7 +33,7 @@
 
 Le projet met en œuvre une architecture microservices complète avec CI/CD automatisé — pour fournir aux praticiens un outil d'aide à la décision **standardisé, sécurisé, traçable et auditable**.
 
-> ⚠️ **Avertissement médical** : OncoScan AI est un outil d'aide à la décision clinique. Il ne remplace en aucun cas le jugement d'un professionnel de santé qualifié.
+> ⚠️ **Avertissement médical** : OncoScan AI est un outil d'aide à la décision clinique dévéloppé à des fins pédagogiques. Il ne remplace en aucun cas le jugement d'un professionnel de santé qualifié.
 
 ### Points forts
 
