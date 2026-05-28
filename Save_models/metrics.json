@@ -1,0 +1,10 @@
+{
+  "model": "Xgboost",
+  "n_samples": 100,
+  "recall": 0.92,
+  "precision": 1.0,
+  "f1": 0.9583,
+  "auc": 0.9996,
+  "threshold": 0.9,
+  "passed": true
+}

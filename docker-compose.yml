@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # ===================================#
+  # 1. BASE DE DONNÉES : PostgreSQL    #
+  # ===================================#
+  postgres:
+    image: postgres:15-alpine
+    container_name: oncoscan_db
+    restart: always
+    environment:
+      POSTGRES_DB: oncoscan
+      POSTGRES_USER: oncoscan
+      POSTGRES_PASSWORD: oncoscan_secure_password 
+    ports:
+      - "5432:5432"
+    volumes:
+      # Initialisation automatique de la base au premier démarrage
+      - ./Database/init.sql:/docker-entrypoint-initdb.d/init.sql
+     
+      # Persistance locale des données 
+      - postgres_data:/var/lib/postgresql/data
+      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oncoscan -d oncoscan"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ================================================#
+  # 2. APPLICATION : API FastAPI (Modèle XGBoost)   #
+  # ================================================#
+  api:
+    build:
+      context: .
+      dockerfile: ./Api/Dockerfile
+    container_name: oncoscan_api
+    restart: always
+    ports:
+      - "8000:8000"
+    
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+
+  # =======================================#
+  # 3. INTERFACE UTILISATEUR : Streamlit   #
+  # =======================================#
+  interface:
+    build:
+      context: .
+      dockerfile: ./Interface/Dockerfile
+    container_name: oncoscan_interface
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000/predict
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=oncoscan
+      - DB_USER=oncoscan
+      - DB_PASSWORD=oncoscan_secure_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+# Déclaration du volume nommé pour la persistance des données
+volumes:
+  postgres_data:
+
+
+# lancer docker-compose : docker-compose up --build
