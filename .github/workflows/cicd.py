@@ -7,9 +7,10 @@ on:
     branches: ["main"]
 
 jobs:
-  # =======================================#
-  # ÉTAPE 1 : QUALITÉ DU CODE (Linting)    #
-  # =======================================#
+  
+  # ===========================================================================
+  # ÉTAPE 1 : QUALITÉ DU CODE (Linting) 
+  # ===========================================================================
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -23,16 +24,16 @@ jobs:
       - name: Install linter
         run: pip install flake8
 
-      # Ajustement : Pointage ciblé sur tes scripts réels et leurs sous-dossiers
+      # Vérification de tes nouveaux scripts réels
       - name: Lint API
-        run: flake8 Api/main.py --max-line-length=120 --ignore=E501,W503
+        run: flake8 Api/api.py --max-line-length=120 --ignore=E501,W503
 
       - name: Lint Streamlit
-        run: flake8 Interface/app.py --max-line-length=120 --ignore=E501,W503
+        run: flake8 Interface/app_stream.py --max-line-length=120 --ignore=E501,W503
 
-  # ==========================================================#
-  # ÉTAPE 2 : TESTS UNITAIRES (Conteneur Postgres éphémère)   #
-  # ==========================================================#
+  # ===========================================================================
+  # ÉTAPE 2 : TESTS UNITAIRES (Conteneur Postgres éphémère)
+  # ===========================================================================
   test:
     needs: lint
     runs-on: ubuntu-latest
@@ -60,26 +61,28 @@ jobs:
         with:
           python-version: '3.12'
 
+      # Optimisation : On génère une clé de cache qui surveille tes deux fichiers de dépendances
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: pip-${{ hashFiles('requirements-prod.txt') }}
+          key: pip-${{ hashFiles('requirements-prod.txt', 'requirements-streamlit.txt') }}
           restore-keys: |
             pip-
 
+      # Installation de l'ensemble de l'écosystème nécessaire aux tests
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements-prod.txt
+          python -m pip install --upgrade pip
+          if [ -f requirements-prod.txt ]; then pip install -r requirements-prod.txt; fi
+          if [ -f requirements-streamlit.txt ]; then pip install -r requirements-streamlit.txt; fi
           pip install pytest httpx pytest-asyncio
 
-      # Ajustement : Pointage sur le sous-dossier database pour trouver ton init.sql
       - name: Init database
         env:
           PGPASSWORD: oncoscan_secure_password
         run: |
-          psql -h localhost -U oncoscan -d oncoscan -f database/init.sql
+          psql -h localhost -U oncoscan -d oncoscan -f Database/init.sql
 
       - name: Run tests
         env:
@@ -97,6 +100,7 @@ jobs:
         with:
           name: test-results
           path: test-results.xml
+          
 
   # ===========================================================================
   # ÉTAPE 3 : COMPILATION & LIVRAISON (Docker Hub - Uniquement sur Main)
@@ -122,7 +126,6 @@ jobs:
         id: tag
         run: echo "SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      # Ajustement : Contexte racine (.) et ciblage du Dockerfile dans ./Api/
       - name: Build and Push API
         uses: docker/build-push-action@v6
         with:
@@ -136,7 +139,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Ajustement : Contexte racine (.) et ciblage du Dockerfile dans ./Interface/
       - name: Build and Push Streamlit
         uses: docker/build-push-action@v6
         with:
@@ -149,6 +151,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/oncoscan-streamlit:${{ steps.tag.outputs.SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
 
   # ===========================================================================
   # ÉTAPE 4 : NOTIFICATION RÉSUMÉ (S'exécute toujours à la fin)

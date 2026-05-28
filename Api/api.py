@@ -98,3 +98,6 @@ def predict(data: PredictionInput):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Une erreur interne est survenue lors du calcul de la prédiction."
         )
+        
+
+# Run api : uvicorn api:app --reload 

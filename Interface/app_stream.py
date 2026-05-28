@@ -151,3 +151,7 @@ if st.button("Lancer l'analyse du risque", use_container_width=True):
                 
         except requests.exceptions.RequestException as net_err:
             st.error(f"Erreur réseau : Impossible de contacter l'API de prédiction. {net_err}")
+
+
+
+# Run app : streamlit run app_stream.py

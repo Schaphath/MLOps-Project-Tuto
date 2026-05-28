@@ -5,5 +5,7 @@ __pycache__/
 venv/
 .dockerignore 
 .env
+debug_git.txt
+
 
 

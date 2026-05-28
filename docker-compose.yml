@@ -27,6 +27,7 @@ services:
       timeout: 5s
       retries: 5
 
+
   # ================================================#
   # 2. APPLICATION : API FastAPI (Modèle XGBoost)   #
   # ================================================#
@@ -45,6 +46,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 3
+
 
   # =======================================#
   # 3. INTERFACE UTILISATEUR : Streamlit   #
@@ -69,6 +71,7 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+
 
 # Déclaration du volume nommé pour la persistance des données
 volumes:

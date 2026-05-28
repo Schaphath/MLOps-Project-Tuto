@@ -1,6 +1,6 @@
-# ==========================================
-# ÉTAPE 1 : BUILDER (Installation isolée)
-# ==========================================
+# ==========================================#
+# ÉTAPE 1 : BUILDER (Installation isolée)   #
+# ==========================================#
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
@@ -13,9 +13,9 @@ COPY requirements-prod.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements-prod.txt
 
-# ===============================================
-# ÉTAPE 2 : RUNTIME (Image finale ultra-légère)
-# ===============================================
+# ===============================================#
+# ÉTAPE 2 : RUNTIME (Image finale ultra-légère)  #
+# ===============================================#
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
@@ -42,5 +42,5 @@ USER appuser
 EXPOSE 8000
 
 # Commande de lancement de production via Uvicorn
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
