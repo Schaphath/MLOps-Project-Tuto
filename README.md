@@ -327,12 +327,6 @@ Merci de respecter les conventions de commit [Conventional Commits](https://www.
 
 ---
 
-## 📄 Licence
-
-Ce projet est distribué sous licence **MIT**. Voir le fichier [LICENSE](LICENSE) pour plus d'informations.
-
----
-
 <div align="center">
 
 Fait avec ❤️ pour la recherche en oncologie computationnelle
