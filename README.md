@@ -1,6 +1,3 @@
-<<<<<<< Updated upstream
-
-=======
 <div align="center">
 
 <!-- LOGO / BANNER -->
@@ -309,4 +306,4 @@ Merci de respecter les conventions de commit [Conventional Commits](https://www.
 
 
 </div>
->>>>>>> Stashed changes
+
