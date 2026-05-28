@@ -36,9 +36,9 @@ if "username" not in st.session_state:
 
 st.title("🩺 OncoScan AI")
 
-#=============================================================================#
-# 1. ÉCRAN D'AUTHENTIFICATION (Si non connecté)                               #
-#=============================================================================#
+#====================================================#
+# 1. ÉCRAN D'AUTHENTIFICATION (Si non connecté)      #
+#====================================================#
 if not st.session_state.authenticated:
     tab_login, tab_register = st.tabs(["Connexion", "Création de compte"])
     
@@ -83,9 +83,9 @@ if not st.session_state.authenticated:
                     st.error(f"Erreur lors de l'inscription : {e}")
     st.stop()
 
-#=============================================================================#
-# 2. APPLICATION PRINCIPALE (Si connecté)                                    #
-#=============================================================================#
+#=============================================#
+# 2. APPLICATION PRINCIPALE (Si connecté)     #
+#=============================================#
 st.sidebar.write(f"Praticien : **{st.session_state.username}**")
 if st.sidebar.button("Déconnexion"):
     st.session_state.authenticated = False
