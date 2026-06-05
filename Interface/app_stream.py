@@ -1,10 +1,12 @@
+# Librairie 
 import os
 import hashlib
 import requests
 import streamlit as st
 import psycopg2
 
-# Configuration des variables d'environnement (Production / Docker)
+
+# Configuration des variables d'environnement 
 API_URL = os.getenv("API_URL", "http://api:8000/predict")
 
 DB_CONFIG = {
@@ -12,23 +14,25 @@ DB_CONFIG = {
     "port": int(os.getenv("DB_PORT", "5432")),
     "dbname": os.getenv("DB_NAME", "oncoscan"),
     "user": os.getenv("DB_USER", "oncoscan"),
-    "password": os.getenv("DB_PASSWORD", "oncoscan"),
+    "password": os.getenv("DB_PASSWORD", "oncoscan")
 }
 
-# Liste des caractéristiques (features) de la tumeur
-FEATURES = [
-    "texture_worst", "area_worst", "smoothness_worst", "compactness_worst",
-    "concavity_worst", "concave_points_worst", "symmetry_worst", "fractal_dimension_worst"
-]
 
-# Gestion de la connexion PostgreSQL (Context Manager automatique)
+# Liste features
+FEATURES = ["texture_worst", "area_worst", "smoothness_worst", "compactness_worst", 
+            "concavity_worst", "concave_points_worst", "symmetry_worst", "fractal_dimension_worst"]
+
+
+# Gestion de la connexion PostgreSQL 
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
+
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
-#--- INITIALISATION DU SESSION STATE ---
+
+# Initialisation sécurisée de la session state
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "username" not in st.session_state:
@@ -36,9 +40,19 @@ if "username" not in st.session_state:
 
 st.title("🩺 OncoScan AI")
 
-#====================================================#
-# 1. ÉCRAN D'AUTHENTIFICATION (Si non connecté)      #
-#====================================================#
+
+# GESTION DE LA DÉCONNEXION (Placée au plus haut niveau pour couper le script immédiatement)
+if st.session_state.authenticated:
+    if st.sidebar.button("Déconnexion"):
+        st.session_state.clear()  # Purge absolue de TOUTE la mémoire Streamlit
+        st.session_state.authenticated = False
+        st.session_state.username = ""
+        st.rerun()                # Rechargement immédiat à l'état initial
+
+
+#===================================================================#
+# CAS 1 : L'UTILISATEUR N'EST PAS CONNECTÉ                         #
+#===================================================================#
 if not st.session_state.authenticated:
     tab_login, tab_register = st.tabs(["Connexion", "Création de compte"])
     
@@ -57,7 +71,7 @@ if not st.session_state.authenticated:
                     st.session_state.authenticated = True
                     st.session_state.username = user
                     st.rerun()
-                else:
+                else: 
                     st.error("Identifiant ou mot de passe incorrect.")
             except Exception as e:
                 st.error(f"Erreur de connexion à la base de données : {e}")
@@ -81,77 +95,70 @@ if not st.session_state.authenticated:
                     st.error("Cet identifiant existe déjà.")
                 except Exception as e:
                     st.error(f"Erreur lors de l'inscription : {e}")
-    st.stop()
 
-#=============================================#
-# 2. APPLICATION PRINCIPALE (Si connecté)     #
-#=============================================#
-st.sidebar.write(f"Praticien : **{st.session_state.username}**")
-if st.sidebar.button("Déconnexion"):
-    st.session_state.authenticated = False
-    st.session_state.username = ""
-    st.rerun()
 
-st.subheader("Analyse des Caractéristiques Cellulaires ('Worst')")
+#===================================================================#
+# CAS 2 : L'UTILISATEUR EST CONNECTÉ                                #
+#===================================================================#
+else:
+    # 1. Barre latérale d'affichage du profil
+    st.sidebar.write(f"Praticien : **{st.session_state.username}**")
 
-# Génération dynamique du formulaire de saisie
-inputs = {}
-col1, col2 = st.columns(2)
-for idx, feature in enumerate(FEATURES):
-    target_col = col1 if idx % 2 == 0 else col2
-    with target_col:
-        inputs[feature] = st.number_input(
-            label=feature.replace("_", " ").title(),
-            min_value=0.0001,
-            max_value=2500.0,
-            format="%.4f",
-            key=feature
-        )
+    # 2. Formulaire médical principal
+    st.subheader("Entrez vos informations médicales")
+    inputs = {}
 
-# Soumission du formulaire et traitement des requêtes
-if st.button("Lancer l'analyse du risque", use_container_width=True):
-    with st.spinner("Inférence en cours via l'API..."):
-        try:
-            # 1. Envoi des données à l'API FastAPI
-            response = requests.post(API_URL, json=inputs, timeout=10)
-            
-            if response.status_code == 200:
-                result = response.json()
-                pred = result["prediction"]
-                prob = result["probability_malignant"]
+    col1, col2 = st.columns(2)
+    for idx, feature in enumerate(FEATURES):
+        target_col = col1 if idx % 2 == 0 else col2
+        with target_col:
+            inputs[feature] = st.number_input(
+                label=feature.replace("_", " ").title(),
+                min_value=0.0001,
+                max_value=2500.0,
+                format="%.4f",
+                key=feature
+            )
+
+    # 3. Traitement et appel de l'API de prédiction
+    if st.button("Lancer l'analyse du risque", use_container_width=True):
+        with st.spinner("Inférence en cours via l'API..."):
+            try:
+                response = requests.post(API_URL, json=inputs, timeout=10)
                 
-                # 2. Sauvegarde immédiate dans l'historique PostgreSQL
-                try:
-                    with get_db_connection() as conn:
-                        with conn.cursor() as cur:
-                            cur.execute("""
-                                INSERT INTO predictions (
-                                    utilisateur, texture_worst, area_worst, smoothness_worst, 
-                                    compactness_worst, concavity_worst, concave_points_worst, 
-                                    symmetry_worst, fractal_dimension_worst, prediction, probability_pct
-                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """, (
-                                st.session_state.username, inputs["texture_worst"], inputs["area_worst"],
-                                inputs["smoothness_worst"], inputs["compactness_worst"], inputs["concavity_worst"],
-                                inputs["concave_points_worst"], inputs["symmetry_worst"], inputs["fractal_dimension_worst"],
-                                pred, round(prob * 100, 2)
-                            ))
-                        conn.commit()
-                except Exception as db_err:
-                    st.warning(f"Impossible d'enregistrer dans l'historique : {db_err}")
+                if response.status_code == 200:
+                    result = response.json()
+                    pred = result["prediction"]
+                    prob = result["probability_malignant"]
+                    
+                    # Sauvegarde dans PostgreSQL
+                    try:
+                        with get_db_connection() as conn:
+                            with conn.cursor() as cur:
+                                cur.execute("""
+                                    INSERT INTO predictions (
+                                        utilisateur, texture_worst, area_worst, smoothness_worst, 
+                                        compactness_worst, concavity_worst, concave_points_worst, 
+                                        symmetry_worst, fractal_dimension_worst, prediction, probability_pct
+                                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                    """, (
+                                    st.session_state.username, inputs["texture_worst"], inputs["area_worst"],
+                                    inputs["smoothness_worst"], inputs["compactness_worst"], inputs["concavity_worst"],
+                                    inputs["concave_points_worst"], inputs["symmetry_worst"], inputs["fractal_dimension_worst"],
+                                    pred, round(prob * 100, 2)
+                                ))
+                            conn.commit()
+                    except Exception as db_err:
+                        st.warning(f"Impossible d'enregistrer dans l'historique : {db_err}")
 
-                # 3. Affichage visuel du diagnostic médical
-                if pred == "M":
-                    st.error(f"🚨 TUMEUR MALIGNE (Risque Élevé) — Probabilité : {prob * 100:.2f}%")
-                    st.info("💡 **Recommandation :** Une confrontation anatomopathologique (biopsie) est requise.")
+                    # Affichage des résultats
+                    if pred == "M":
+                        st.error(f"TUMEUR MALIGNE (Risque Élevé) — Probabilité : {prob * 100:.2f}%")
+                        st.info("**Recommandation :** Prenez urgemment rendez-vous avec un spécialiste.")
+                    else:
+                        st.success(f"✓ TUMEUR BÉNIGNE (Risque Faible) — Probabilité : {prob * 100:.2f}%")
                 else:
-                    st.success(f"✓ TUMEUR BÉNIGNE (Risque Faible) — Probabilité : {prob * 100:.2f}%")
-            else:
-                st.error(f"L'API a renvoyé une erreur (Code {response.status_code})")
-                
-        except requests.exceptions.RequestException as net_err:
-            st.error(f"Erreur réseau : Impossible de contacter l'API de prédiction. {net_err}")
-
-
-
-# Run app : streamlit run app_stream.py
+                    st.error(f"L'API a renvoyé une erreur (Code {response.status_code})")
+                    
+            except requests.exceptions.RequestException as net_err:
+                st.error(f"Erreur réseau : Impossible de contacter l'API. {net_err}")

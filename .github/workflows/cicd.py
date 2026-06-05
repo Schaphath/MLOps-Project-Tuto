@@ -8,9 +8,8 @@ on:
 
 jobs:
   
-  # ===========================================================================
   # ÉTAPE 1 : QUALITÉ DU CODE (Linting) 
-  # ===========================================================================
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -31,9 +30,9 @@ jobs:
       - name: Lint Streamlit
         run: flake8 Interface/app_stream.py --max-line-length=120 --ignore=E501,W503
 
-  # ===========================================================================
+
+
   # ÉTAPE 2 : TESTS UNITAIRES (Conteneur Postgres éphémère)
-  # ===========================================================================
   test:
     needs: lint
     runs-on: ubuntu-latest
@@ -100,11 +99,10 @@ jobs:
         with:
           name: test-results
           path: test-results.xml
+       
           
 
-  # ===========================================================================
   # ÉTAPE 3 : COMPILATION & LIVRAISON (Docker Hub - Uniquement sur Main)
-  # ===========================================================================
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
@@ -153,9 +151,8 @@ jobs:
           cache-to: type=gha,mode=max
 
 
-  # ===========================================================================
+
   # ÉTAPE 4 : NOTIFICATION RÉSUMÉ (S'exécute toujours à la fin)
-  # ===========================================================================
   notify:
     needs: [lint, test, build-and-push]
     runs-on: ubuntu-latest

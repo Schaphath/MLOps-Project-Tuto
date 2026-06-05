@@ -23,8 +23,8 @@ services:
       
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U oncoscan -d oncoscan"]
-      interval: 5s
-      timeout: 5s
+      interval: 30s
+      timeout: 15s
       retries: 5
 
 
@@ -43,9 +43,9 @@ services:
     # Healthcheck
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
-      interval: 20s
-      timeout: 10s
-      retries: 3
+      interval: 30s
+      timeout: 15s
+      retries: 5
 
 
   # =======================================#

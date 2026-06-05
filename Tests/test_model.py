@@ -6,7 +6,7 @@
 ##============================================================================================##
 
 
-# PACKAGES 
+# Librairies  
 import pytest
 import pickle
 import numpy as np
@@ -15,7 +15,6 @@ from pathlib import Path
 from sklearn.metrics import (
     recall_score,
     precision_score,
-    
     f1_score,
     roc_auc_score,
     confusion_matrix)
@@ -24,25 +23,25 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 
-#   PATH 
+# Path 
 DATA_PATH   = Path("Data/process/cancer_clean.csv")
 MODELS_DIR  = Path("Save_models")
 
-# Seuils de validation médicale
+# Seuils de validation 
 SEUIL_RECALL = 0.95  
 SEUIL_PRECISION = 0.90   
 SEUIL_AUC = 0.92   
 SEUIL_F1 = 0.90  
 
 
-# PREREQUIS
-
+# Prérequis
 @pytest.fixture(scope="module")
+
 def dataset():
-    """Charge dataset depuis Data/process/cancer_clean.csv"""
+    """Importer dataset depuis Data/process/cancer_clean.csv"""
     assert DATA_PATH.exists(), (
         f"Dataset introuvable : {DATA_PATH}\n"
-        "Vérifie que le fichier existe avant de lancer les tests."
+        "Vérifier que le fichier existe avant de lancer les tests."
     )
     df = pd.read_csv(DATA_PATH) 
     df = df.drop(["radius_worst", "perimeter_worst"], axis = 1)
@@ -56,7 +55,7 @@ def dataset():
 
 @pytest.fixture(scope="module")
 def model_and_scaler():
-    """Charge xgboost model (.pkl) et le scaler depuis Save_models/."""
+    """Charger le modèle xgboost (.pkl) et le scaler depuis Save_models/."""
     
     # Cherche le fichier *_best.pkl dans le dossier Save_models
     pkl_files = list(MODELS_DIR.glob("*_best.pkl"))
@@ -83,11 +82,11 @@ def model_and_scaler():
 
 @pytest.fixture(scope="module")
 def predictions(dataset, model_and_scaler):
-    """Prépare X_test, y_test et calcule toutes les prédictions."""
+    """Préparer X_test, y_test et calcule toutes les prédictions."""
     modele, scaler, _ = model_and_scaler
     df = dataset
    
-    # Sélectionne les features _worst (comme dans ton train.py)
+    # Sélection des features _worst (comme dans ton train.py)
     worst_cols = [c for c in df.columns if c.endswith("_worst")]
     assert len(worst_cols) > 0, (
         "Aucune colonne '_worst' trouvée dans le dataset.\n"
@@ -96,7 +95,7 @@ def predictions(dataset, model_and_scaler):
      
     X = df[worst_cols]
 
-    # Encode la cible
+    # Encoder la cible
     y = df["diagnosis"]
     if y.dtype == object:
         y = y.map({"M": 1, "B": 0})
@@ -116,8 +115,7 @@ def predictions(dataset, model_and_scaler):
     return {"y_test": y_test.values, "y_pred": y_pred, "y_proba": y_proba, "n_test": len(y_test)}
 
 
-# VERIFICATION : vérifier que le CSV est exploitable avant tout calcul
-
+# Vérification : vérifier que le CSV est exploitable avant tout calcul
 class TestDataset:
     def test_dataset_non_vide(self, dataset):
         assert len(dataset) > 0, "Le CSV est vide"
@@ -145,14 +143,13 @@ class TestDataset:
         )
 
     def test_encodage_m_est_malin(self, dataset):
-        """Vérifie que M = 1 (malin = positif). Un bug ici inverse le sens des prédictions."""
+        """Vérifier que M = 1 (malin = positif). Un bug ici inverse le sens des prédictions."""
         encoded = dataset["diagnosis"].map({"M": 1, "B": 0})
         assert encoded[dataset["diagnosis"] == "M"].iloc[0] == 1
         assert encoded[dataset["diagnosis"] == "B"].iloc[0] == 0
 
 
-# MÉTRIQUES : les seuils sont calibrés pour un contexte médical.
-
+# Métriques : les seuils sont calibrés pour un contexte médical.
 class TestMetriques:
 
     def test_recall_seuil_medical(self, predictions):

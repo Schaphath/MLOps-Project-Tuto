@@ -1,33 +1,35 @@
-from contextlib import asynccontextmanager
-import logging
-from pathlib import Path
-import pickle
-from typing import Literal
 
+# Librairie 
 from fastapi import FastAPI, HTTPException, status
-import numpy as np
+from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
+from typing import Literal
+from pathlib import Path
+import numpy as np
+import logging
+import pickle
+
 
 # Configuration minimale du Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Chemins des artefacts
+# Artefacts
 MODEL_PATH = Path("save_models/xgboost_best.pkl")
 SCALER_PATH = Path("save_models/MinMax_scaler.pkl")
 
-# Ordre strict des features attendu par le modèle
+# Ordre des features 
 FEATURE_ORDER = [
     "texture_worst", "area_worst", "smoothness_worst", "compactness_worst",
     "concavity_worst", "concave_points_worst", "symmetry_worst", "fractal_dimension_worst"
 ]
 
-# Conteneur global pour les modèles
+# Classe MLArtifacts
 class MLArtifacts:
     model = None
     scaler = None
 
-# Gestion du cycle de vie (Lifespan) : Chargement unique des modèles au démarrage
+# Chargement unique des modèles au démarrage
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Chargement des artefacts de Machine Learning...")
@@ -43,6 +45,7 @@ async def lifespan(app: FastAPI):
         logger.critical(f"Impossible de charger les modèles : {e}")
         raise RuntimeError(e)
     yield
+    
     # Libération des ressources à l'arrêt
     MLArtifacts.model = None
     MLArtifacts.scaler = None
@@ -65,7 +68,7 @@ class PredictionOutput(BaseModel):
     prediction: Literal["M", "B"]
     probability_malignant: float
 
-# Endpoint de vérification de l'état (Healthcheck pour Docker)
+# Healthcheck pour Docker
 @app.get("/health", status_code=status.HTTP_200_OK)
 
 def health_check():
@@ -73,7 +76,7 @@ def health_check():
         raise HTTPException(status_code=503, detail="Modèles non chargés")
     return {"status": "healthy"}
 
-# Endpoint principal d'inférence
+# Prediction
 @app.post("/predict", response_model=PredictionOutput, status_code=status.HTTP_200_OK)
 
 def predict(data: PredictionInput):
@@ -89,7 +92,7 @@ def predict(data: PredictionInput):
         
         return PredictionOutput(
             prediction="M" if pred_raw == 1 else "B",
-            probability_malignant=round(prob_malignant, 4)
+            probability_malignant=round(prob_malignant, 3)
         )
         
     except Exception as e:

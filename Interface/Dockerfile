@@ -5,31 +5,30 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Copie le fichier des dépendances depuis la racine du projet
+# Copier le fichier des dépendances 
 COPY requirements-streamlit.txt .
 
-# CORRECTION : On demande à pip de lire le fichier textuel avec "-r"
+# Installation des librairies indispensables 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements-streamlit.txt
     
 
-# ===============================================#
-# ÉTAPE 2 : RUNTIME (Image finale ultra-légère)  #
-# ===============================================#
+# ==================================#
+# ÉTAPE 2 : RUNTIME (Image finale)  #
+# ==================================#
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
-# Sécurité : Création d'un utilisateur non-root pour l'exécution
+# Création d'un utilisateur non-root
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Récupération uniquement des dépendances installées à l'étape 1
+# Récupération des dépendances installées à l'étape 1
 COPY --from=builder /root/.local /home/appuser/.local
 
-# Rappel Contexte : app_stream.py devient "app.py" dans le conteneur pour correspondre au CMD final
 COPY --chown=appuser:appuser ./Interface/app_stream.py ./app.py
 
-# Configuration des variables d'environnement indispensables
+# Variables d'environnement indispensables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/home/appuser/.local/bin:$PATH"
@@ -37,8 +36,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Passage sous l'utilisateur sécurisé
 USER appuser
 
-# Port par défaut utilisé par Streamlit
+# Port découte Streamlit
 EXPOSE 8501
 
-# Commande de lancement de production pour Streamlit
+# lancement de l'interface web
 CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
