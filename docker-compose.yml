@@ -1,81 +1,88 @@
 version: '3.8'
 
 services:
-  # ===================================#
-  # 1. BASE DE DONNÉES : PostgreSQL    #
-  # ===================================#
+  # =============================================================================
+  # 1. BASE DE DONNÉES : PostgreSQL 15 (Alpine)
+  # =============================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: oncoscan_db
+    container_name: oncoscan_db_v2
     restart: always
     environment:
       POSTGRES_DB: oncoscan
       POSTGRES_USER: oncoscan
-      POSTGRES_PASSWORD: oncoscan_secure_password 
+      POSTGRES_PASSWORD: oncoscan_secure_password
     ports:
       - "5432:5432"
     volumes:
-      # Initialisation automatique de la base au premier démarrage
-      - ./Database/init.sql:/docker-entrypoint-initdb.d/init.sql
-     
-      # Persistance locale des données 
+      # Initialisation automatique du schéma de production au premier démarrage
+      - ./Database/init_modif.sql:/docker-entrypoint-initdb.d/init.sql
+      # Persistance locale et sécurisée des données cliniques anonymisées
       - postgres_data:/var/lib/postgresql/data
-      
+    networks:
+      - oncoscan_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U oncoscan -d oncoscan"]
-      interval: 30s
-      timeout: 15s
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 10s
 
-
-  # ================================================#
-  # 2. APPLICATION : API FastAPI (Modèle XGBoost)   #
-  # ================================================#
+  # =============================================================================
+  # 2. APPLICATION : API FastAPI (Inférence XGBoost & Gestionnaire SQL Thread-Safe)
+  # =============================================================================
   api:
     build:
       context: .
       dockerfile: ./Api/Dockerfile
-    container_name: oncoscan_api
+    container_name: oncoscan_api_v2
     restart: always
     ports:
       - "8000:8000"
-    
-    # Healthcheck
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
-      interval: 30s
-      timeout: 15s
-      retries: 5
-
-
-  # =======================================#
-  # 3. INTERFACE UTILISATEUR : Streamlit   #
-  # =======================================#
-  interface:
-    build:
-      context: .
-      dockerfile: ./Interface/Dockerfile
-    container_name: oncoscan_interface
-    restart: always
-    ports:
-      - "8501:8501"
     environment:
-      - API_URL=http://api:8000/predict
       - DB_HOST=postgres
-      - DB_PORT=5432
       - DB_NAME=oncoscan
       - DB_USER=oncoscan
       - DB_PASSWORD=oncoscan_secure_password
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - oncoscan_net
+    healthcheck:
+      # Vérification de santé applicative complète via l'endpoint dédié de l'API
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s # 🚀 Sursis pour permettre le chargement des fichiers d'artéfacts .pkl
+
+  # =============================================================================
+  # 3. INTERFACE UTILISATEUR : Dashboard Streamlit (Optimisé HTTP Keep-Alive)
+  # =============================================================================
+  interface:
+    build:
+      context: .
+      dockerfile: ./Interface/Dockerfile
+    container_name: oncoscan_interface_v2
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000/predict
+    depends_on:
       api:
         condition: service_healthy
+    networks:
+      - oncoscan_net
 
-
-# Déclaration du volume nommé pour la persistance des données
+# =============================================================================
+# VOLUMES ET RÉSEAUX ISOLÉS
+# =============================================================================
 volumes:
   postgres_data:
+    name: oncoscan_production_data
 
-
-# lancer docker-compose : docker-compose up --build
+networks:
+  oncoscan_net:
+    driver: bridge

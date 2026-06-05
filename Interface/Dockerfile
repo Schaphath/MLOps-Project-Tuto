@@ -26,7 +26,9 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Récupération des dépendances installées à l'étape 1
 COPY --from=builder /root/.local /home/appuser/.local
 
-COPY --chown=appuser:appuser ./Interface/app_stream.py ./app.py
+# COPY --chown=appuser:appuser ./Interface/app_stream.py ./app.py
+COPY --chown=appuser:appuser ./Interface/interface.py ./app.py
+
 
 # Variables d'environnement indispensables
 ENV PYTHONDONTWRITEBYTECODE=1 \
