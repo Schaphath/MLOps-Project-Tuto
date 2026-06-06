@@ -21,7 +21,6 @@ API_URL = os.getenv("API_URL", "http://api:8000/predict")
 def get_http_session() -> requests.Session:
     """Instancie une session HTTP réutilisable (Connexion HTTP Keep-Alive)."""
     session = requests.Session()
-    # Optionnel : Configurer des headers par défaut ici si besoin (ex: tokens)
     return session
 
 http_client = get_http_session()
@@ -31,54 +30,54 @@ http_client = get_http_session()
 # =============================================================================
 FEATURES_META = {
     "texture_worst": {
-        "label": "Texture (pire)",
+        "label": "texture_worst",
         "min": 10.0, "max": 50.0, "default": 25.41,
-        "format": "%.2f", "unit": "σ",
-        "help": "Écart-type des niveaux de gris — valeur élevée = texture irrégulière.",
+        "format": "%.2f", 
+
     },
     "area_worst": {
-        "label": "Aire (pire)",
+        "label": "area_worst",
         "min": 100.0, "max": 4500.0, "default": 880.58,
-        "format": "%.2f", "unit": "µm²",
-        "help": "Surface du plus grand noyau cellulaire observé.",
+        "format": "%.2f", 
+
     },
     "smoothness_worst": {
-        "label": "Lissé (pire)",
+        "label": "smoothness_worst",
         "min": 0.05, "max": 0.25, "default": 0.1324,
-        "format": "%.4f", "unit": "",
-        "help": "Variation locale de la longueur des rayons.",
+        "format": "%.4f", 
     },
+    
     "compactness_worst": {
-        "label": "Compacité (pire)",
+        "label": "compactness_worst",
         "min": 0.02, "max": 1.20, "default": 0.2542,
-        "format": "%.4f", "unit": "",
-        "help": "Périmètre² / Aire − 1. Reflète l'irrégularité de contour.",
+        "format": "%.4f", 
     },
+    
     "concavity_worst": {
-        "label": "Concavité (pire)",
+        "label": "concavity_worst",
         "min": 0.0, "max": 1.30, "default": 0.2722,
-        "format": "%.4f", "unit": "",
-        "help": "Sévérité des parties concaves du contour cellulaire.",
+        "format": "%.4f", 
     },
+    
     "concave_points_worst": {
-        "label": "Points concaves (pire)",
+        "label": "concave_points_worst",
         "min": 0.0, "max": 0.30, "default": 0.1146,
-        "format": "%.4f", "unit": "",
-        "help": "Nombre de portions concaves du contour.",
+        "format": "%.4f", 
     },
+    
     "symmetry_worst": {
-        "label": "Symétrie (pire)",
+        "label": "symmetry_worst",
         "min": 0.10, "max": 0.70, "default": 0.2901,
-        "format": "%.4f", "unit": "",
-        "help": "Asymétrie de la cellule par rapport à son axe principal.",
+        "format": "%.4f", 
     },
+    
     "fractal_dimension_worst": {
-        "label": "Dimension fractale (pire)",
+        "label": "fractal_dimension_worst",
         "min": 0.05, "max": 0.25, "default": 0.0839,
-        "format": "%.4f", "unit": "",
-        "help": "Complexité du contour cellulaire (coastline approximation).",
+        "format": "%.4f", 
     },
 }
+
 
 # =============================================================================
 # INJECTION DES STYLES CSS (PRODUCTION THEME)
@@ -179,13 +178,12 @@ hr { border-color: #1a2a42 !important; margin: 1.4rem 0 !important; }
 # =============================================================================
 st.markdown("""
 <div class="hero-banner">
-    <div class="hero-badge">💡 IA Médicale · Analyse Tumorale</div>
-    <h1 class="hero-title">OncoScan <span>AI</span></h1>
+    <h2 class="hero-title">   🩺 OncoScan <span>AI  </span></h2>
     <p class="hero-subtitle">
-        Renseignez les paramètres morphologiques cellulaires pour obtenir une évaluation
-        instantanée du risque de malignité via notre modèle entraîné sur le dataset
-        Wisconsin Breast Cancer.
+        Renseignez vos informations médicales et obtenez une évaluation
+        instantanée du risque de malignité via notre modèle IA.
     </p>
+    
 </div>
 """, unsafe_allow_html=True)
 
@@ -197,7 +195,7 @@ with st.form(key="oncoscan_form", clear_on_submit=False):
     st.markdown("""
     <div class="form-header">
         <div class="form-header-dot"></div>
-        <p class="form-header-text">📐 Paramètres Morphologiques — Valeurs Extrêmes</p>
+        <p class="form-header-text"> Données médicales (valeurs Extrêmes)</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -208,101 +206,92 @@ with st.form(key="oncoscan_form", clear_on_submit=False):
     for idx, (feature_key, meta) in enumerate(features_list):
         target_col = col1 if idx % 2 == 0 else col2
         with target_col:
-            unit_label = f" ({meta['unit']})" if meta["unit"] else ""
             inputs[feature_key] = st.number_input(
-                label=f"{meta['label']}{unit_label}",
+                label=f"{meta['label']}",
                 min_value=meta["min"],
                 max_value=meta["max"],
                 value=meta["default"],
                 format=meta["format"],
-                help=meta["help"],
-                key=feature_key,
+                key=feature_key,  
             )
 
     st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
     st.caption("⚠️ Outil d'aide à la décision clinique — ne remplace pas l'avis d'un professionnel de santé.")
 
+    # FIX : Remis à l'intérieur du bloc 'with st.form' pour éliminer l'alerte de bouton manquant
     submitted = st.form_submit_button(
-        label="🔬 Lancer l'analyse",
+        label="Lancer l'analyse",
         use_container_width=True,
     )
 
 # =============================================================================
-# TRAITEMENT DU CLINIQUE ET INFÉRENCE VIA L'API
+# CONTENEUR DE SORTIE (Placé juste sous le formulaire pour un flux naturel)
+# =============================================================================
+output_container = st.container()
+
+# =============================================================================
+# TRAITEMENT CLINIQUE ET INFÉRENCE VIA L'API
 # =============================================================================
 if submitted:
-    with st.spinner("Inférence en cours — modèle OncoScan AI…"):
-        try:
-            # Appel à l'aide du client http réutilisable
-            response = http_client.post(API_URL, json=inputs, timeout=10)
-            response.raise_for_status()
-            result = response.json()
+    # On force l'écriture des résultats et des spinners exclusivement dans le conteneur du bas
+    with output_container:
+        with st.spinner("Résultats en cours…"):
+            try:
+                response = http_client.post(API_URL, json=inputs, timeout=10)
+                response.raise_for_status()
+                result = response.json()
 
-            pred = result.get("prediction", "unknown")
-            prob_malignant = float(result.get("probability_malignant", 0.0))
-            is_malignant = str(pred).strip().lower() in {"m", "malignant", "malin", "maligne"}
+                pred = result.get("prediction", "unknown")
+                prob_malignant = float(result.get("probability_malignant", 0.0))
+                is_malignant = str(pred).strip().lower() in {"m", "malignant", "malin", "maligne"}
 
-            st.markdown("<div style='margin-top:1.2rem'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:1.2rem'></div>", unsafe_allow_html=True)
 
-            if is_malignant:
-                prob_pct = prob_malignant * 100
-                st.markdown(f"""
-                <div class="result-card result-malignant">
-                    <p class="result-label">⚠️ Diagnostic</p>
-                    <p class="result-title">Tumeur Maligne — Risque Élevé</p>
-                    <div class="result-prob-row">
-                        <span class="result-prob">{prob_pct:.1f}%</span>
-                        <span class="result-prob-label">probabilité de malignité</span>
+                if is_malignant:
+                    prob_pct = prob_malignant * 100
+                    st.markdown(f"""
+                    <div class="result-card result-malignant">
+                        <p class="result-label">⚠️ Diagnostic</p>
+                        <p class="result-title">Tumeur Maligne — Risque Élevé</p>
+                        <div class="result-prob-row">
+                            <span class="result-prob">{prob_pct:.1f}%</span>
+                            <span class="result-prob-label">probabilité de malignité</span>
+                        </div>
+                        <div class="prob-bar-wrap">
+                            <div class="prob-bar-fill prob-bar-malignant" style="width:{prob_pct:.1f}%"></div>
+                        </div>
+                      
                     </div>
-                    <div class="prob-bar-wrap">
-                        <div class="prob-bar-fill prob-bar-malignant" style="width:{prob_pct:.1f}%"></div>
+                    """, unsafe_allow_html=True)
+                else:
+                    prob_benign_pct = (1.0 - prob_malignant) * 100
+                    gauge_fill_pct = prob_malignant * 100 
+                    
+                    st.markdown(f"""
+                    <div class="result-card result-benign">
+                        <p class="result-label">✅ Diagnostic</p>
+                        <p class="result-title">Tumeur Bénigne — Risque Faible</p>
+                        <div class="result-prob-row">
+                            <span class="result-prob">{prob_benign_pct:.1f}%</span>
+                            <span class="result-prob-label">probabilité de bénignité</span>
+                        </div>
+                        <div class="prob-bar-wrap">
+                            <div class="prob-bar-fill prob-bar-benign" style="width:{gauge_fill_pct:.1f}%"></div>
+                        </div>
+                        
                     </div>
-                    <div class="reco-box">
-                        💡 <strong>Recommandation clinique :</strong> Ce profil cellulaire présente
-                        des caractéristiques morphologiques associées à une forte suspicion de malignité.
-                        Un examen clinique approfondi, une imagerie complémentaire et une
-                        <strong>biopsie tissulaire</strong> sont fortement recommandés dans les plus brefs délais.
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                # On calcule le pourcentage de confiance pour l'affichage de bénignité
-                prob_benign_pct = (1.0 - prob_malignant) * 100
-                # La jauge affiche l'intensité du risque résiduel (prob_malignant)
-                gauge_fill_pct = prob_malignant * 100 
+                    """, unsafe_allow_html=True)
+
                 
-                st.markdown(f"""
-                <div class="result-card result-benign">
-                    <p class="result-label">✅ Diagnostic</p>
-                    <p class="result-title">Tumeur Bénigne — Risque Faible</p>
-                    <div class="result-prob-row">
-                        <span class="result-prob">{prob_benign_pct:.1f}%</span>
-                        <span class="result-prob-label">probabilité de bénignité</span>
-                    </div>
-                    <div class="prob-bar-wrap">
-                        <div class="prob-bar-fill prob-bar-benign" style="width:{gauge_fill_pct:.1f}%"></div>
-                    </div>
-                    <div class="reco-box">
-                        💡 <strong>Recommandation clinique :</strong> Les caractéristiques cellulaires
-                        s'inscrivent dans les critères morphologiques de bénignité. Un
-                        <strong>suivi de routine</strong> avec contrôle annuel est conseillé. Consultez
-                        votre médecin si de nouveaux symptômes apparaissent.
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
 
-            st.markdown("<div style='margin-top:1rem'></div>", unsafe_allow_html=True)
-            with st.expander("🔎 Détail technique de la réponse API"):
-                st.json(result)
-
-        except requests.exceptions.ConnectionError:
-            st.error("🔌 **Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
-        except requests.exceptions.Timeout:
-            st.error("⏱️ **Délai dépassé** — L'API n'a pas répondu dans le délai imparti (10 s).")
-        except requests.exceptions.HTTPError as http_err:
-            st.error(f"❌ **Erreur HTTP {response.status_code}** — Détail : `{http_err}`")
-        except (KeyError, ValueError) as parse_err:
-            st.error(f"⚙️ **Erreur de parsing** — Format de réponse inattendu : `{parse_err}`")
+            except requests.exceptions.ConnectionError:
+                st.error("🔌 **Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
+            except requests.exceptions.Timeout:
+                st.error("**Délai dépassé** — L'API n'a pas répondu dans le délai imparti (10 s).")
+            except requests.exceptions.HTTPError as http_err:
+                st.error(f"**Erreur HTTP {response.status_code}** — Détail : `{http_err}`")
+            except (KeyError, ValueError) as parse_err:
+                st.error(f"**Erreur de parsing** — Format de réponse inattendu : `{parse_err}`")
 
 # =============================================================================
 # PIED DE PAGE INTERFACE
