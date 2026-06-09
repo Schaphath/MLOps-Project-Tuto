@@ -10,3 +10,7 @@ git push origin main
 
 # supprimer la branche 
 git branch -d modification_api
+
+# Gestion de conflit
+git pull origin main --rebase
+git push origin main
