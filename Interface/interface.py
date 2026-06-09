@@ -21,55 +21,56 @@ def get_http_session() -> requests.Session:
     session = requests.Session()
     return session
 
+
 http_client = get_http_session()
 
 
-# MÉTADONNÉES 
+# MÉTADONNÉES
 FEATURES_META = {
     "texture_worst": {
         "label": "texture_worst",
         "min": 10.0, "max": 50.0, "default": 25.41,
-        "format": "%.2f", 
+        "format": "%.2f",
     },
     "area_worst": {
         "label": "area_worst",
         "min": 100.0, "max": 4500.0, "default": 880.58,
-        "format": "%.2f", 
+        "format": "%.2f",
     },
     "smoothness_worst": {
         "label": "smoothness_worst",
         "min": 0.05, "max": 0.25, "default": 0.1324,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
     "compactness_worst": {
         "label": "compactness_worst",
         "min": 0.02, "max": 1.20, "default": 0.2542,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
     "concavity_worst": {
         "label": "concavity_worst",
         "min": 0.0, "max": 1.30, "default": 0.2722,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
     "concave_points_worst": {
         "label": "concave_points_worst",
         "min": 0.0, "max": 0.30, "default": 0.1146,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
     "symmetry_worst": {
         "label": "symmetry_worst",
         "min": 0.10, "max": 0.70, "default": 0.2901,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
     "fractal_dimension_worst": {
         "label": "fractal_dimension_worst",
         "min": 0.05, "max": 0.25, "default": 0.0839,
-        "format": "%.4f", 
+        "format": "%.4f",
     },
 }
 
 
-# INJECTION DES STYLES CSS 
+# INJECTION DES STYLES CSS
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
@@ -162,7 +163,7 @@ hr { border-color: #1a2a42 !important; margin: 1.4rem 0 !important; }
 """, unsafe_allow_html=True)
 
 
-# EN-TÊTE 
+# EN-TÊTE
 st.markdown("""
 <div class="hero-banner">
     <h2 class="hero-title"> 🩺 OncoScan <span>AI </span></h2>
@@ -200,11 +201,14 @@ with st.form(key="oncoscan_form", clear_on_submit=False):
                 max_value=meta["max"],
                 value=meta["default"],
                 format=meta["format"],
-                key=feature_key,  
+                key=feature_key,
             )
 
-    st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
-    st.caption("⚠️ Outil d'aide à la décision clinique — ne remplace pas l'avis d'un professionnel de santé.")
+    st.markdown(
+        "<div style='margin-top:0.4rem'></div>",
+        unsafe_allow_html=True)
+    st.caption(
+        "⚠️ Outil d'aide à la décision clinique — ne remplace pas l'avis d'un professionnel de santé.")
 
     # Attribution de la variable à l'intérieur du formulaire
     submitted = st.form_submit_button(
@@ -213,7 +217,7 @@ with st.form(key="oncoscan_form", clear_on_submit=False):
     )
 
 
-# CONTENEUR DE SORTIE 
+# CONTENEUR DE SORTIE
 output_container = st.container()
 
 
@@ -227,10 +231,14 @@ if submitted:
                 result = response.json()
 
                 pred = result.get("prediction", "unknown")
-                prob_malignant = float(result.get("probability_malignant", 0.0))
-                is_malignant = str(pred).strip().lower() in {"m", "malignant", "malin", "maligne"}
+                prob_malignant = float(result.get(
+                    "probability_malignant", 0.0))
+                is_malignant = str(pred).strip().lower() in {
+                    "m", "malignant", "malin", "maligne"}
 
-                st.markdown("<div style='margin-top:1.2rem'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div style='margin-top:1.2rem'></div>",
+                    unsafe_allow_html=True)
 
                 if is_malignant:
                     prob_pct = prob_malignant * 100
@@ -249,8 +257,8 @@ if submitted:
                     """, unsafe_allow_html=True)
                 else:
                     prob_benign_pct = (1.0 - prob_malignant) * 100
-                    gauge_fill_pct = prob_malignant * 100 
-                    
+                    gauge_fill_pct = prob_malignant * 100
+
                     st.markdown(f"""
                     <div class="result-card result-benign">
                         <p class="result-label">✅ Diagnostic</p>
@@ -266,13 +274,17 @@ if submitted:
                     """, unsafe_allow_html=True)
 
             except requests.exceptions.ConnectionError:
-                st.error("**Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
+                st.error(
+                    "**Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
             except requests.exceptions.Timeout:
-                st.error("**Délai dépassé** — L'API n'a pas répondu dans le délai imparti.")
+                st.error(
+                    "**Délai dépassé** — L'API n'a pas répondu dans le délai imparti.")
             except requests.exceptions.HTTPError as http_err:
-                st.error(f"**Erreur HTTP {response.status_code}** — Détail : `{http_err}`")
+                st.error(
+                    f"**Erreur HTTP {response.status_code}** — Détail : `{http_err}`")
             except (KeyError, ValueError) as parse_err:
-                st.error(f"**Erreur de parsing** — Format de réponse inattendu : `{parse_err}`")
+                st.error(
+                    f"**Erreur de parsing** — Format de réponse inattendu : `{parse_err}`")
 
 
 # PIED DE PAGE INTERFACE
