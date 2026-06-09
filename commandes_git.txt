@@ -1,0 +1,12 @@
+# Créer une branche
+git branch modification_api
+git checkout modification_api
+
+# Revenir à la branche d'origine 
+git checkout main 
+git pull origin main
+git merge modification_api
+git push origin main 
+
+# supprimer la branche 
+git branch -d modification_api
