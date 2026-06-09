@@ -1,3 +1,4 @@
+# packages
 import os
 import time
 import pickle
@@ -232,4 +233,10 @@ def predict(data: PredictionInput):
         logger.error(f"Erreur interne lors du traitement : {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+<<<<<<< HEAD
             detail="Une erreur interne est survenue lors du calcul de la prédiction.")
+=======
+            detail="Une erreur interne est survenue lors du calcul de la prédiction."
+        )
+        
+>>>>>>> 72fa10c243446b8a936398270684a3cc8dad41f3
