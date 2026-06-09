@@ -229,14 +229,9 @@ def predict(data: PredictionInput):
             probability_malignant=round(prob_malignant, 3)
         )
 
-    except Exception as e:
+  except Exception as e:
         logger.error(f"Erreur interne lors du traitement : {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-<<<<<<< HEAD
             detail="Une erreur interne est survenue lors du calcul de la prédiction.")
-=======
-            detail="Une erreur interne est survenue lors du calcul de la prédiction."
-        )
         
->>>>>>> 72fa10c243446b8a936398270684a3cc8dad41f3
