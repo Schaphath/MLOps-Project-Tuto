@@ -1,9 +1,8 @@
+
 version: '3.8'
 
 services:
-  # =============================================================================
-  # 1. BASE DE DONNÉES : PostgreSQL 15 (Alpine)
-  # =============================================================================
+  # BASE DE DONNÉES 
   postgres:
     image: postgres:15-alpine
     container_name: oncoscan_db_v2
@@ -17,7 +16,7 @@ services:
     volumes:
       # Initialisation automatique du schéma de production au premier démarrage
       - ./Database/init_modif.sql:/docker-entrypoint-initdb.d/init.sql
-      # Persistance locale et sécurisée des données cliniques anonymisées
+      # Persistance locale des données 
       - postgres_data:/var/lib/postgresql/data
     networks:
       - oncoscan_net
@@ -28,13 +27,12 @@ services:
       retries: 5
       start_period: 10s
 
-  # =============================================================================
-  # 2. APPLICATION : API FastAPI (Inférence XGBoost & Gestionnaire SQL Thread-Safe)
-  # =============================================================================
+  # API 
   api:
     build:
       context: .
       dockerfile: ./Api/Dockerfile
+    image: schaphath/oncoscan-api:v2.0
     container_name: oncoscan_api_v2
     restart: always
     ports:
@@ -50,20 +48,18 @@ services:
     networks:
       - oncoscan_net
     healthcheck:
-      # Vérification de santé applicative complète via l'endpoint dédié de l'API
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
       interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 20s # 🚀 Sursis pour permettre le chargement des fichiers d'artéfacts .pkl
+      start_period: 20s 
 
-  # =============================================================================
-  # 3. INTERFACE UTILISATEUR : Dashboard Streamlit (Optimisé HTTP Keep-Alive)
-  # =============================================================================
+  # INTERFACE WEB
   interface:
     build:
       context: .
       dockerfile: ./Interface/Dockerfile
+    image: schaphath/oncoscan-interface:v2.0
     container_name: oncoscan_interface_v2
     restart: always
     ports:
@@ -76,9 +72,7 @@ services:
     networks:
       - oncoscan_net
 
-# =============================================================================
 # VOLUMES ET RÉSEAUX ISOLÉS
-# =============================================================================
 volumes:
   postgres_data:
     name: oncoscan_production_data
@@ -86,3 +80,5 @@ volumes:
 networks:
   oncoscan_net:
     driver: bridge
+
+    

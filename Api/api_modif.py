@@ -12,15 +12,13 @@ from psycopg2 import pool
 from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException, status
 
-# =============================================================================
+
 # CONFIGURATION DU LOGGING
-# =============================================================================
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# CONFIGURATION & CONSTANTES
-# =============================================================================
+
+# CONFIGURATION 
 MODEL_PATH = Path("save_models/xgboost_best.pkl")
 SCALER_PATH = Path("save_models/MinMax_scaler.pkl")
 
@@ -34,14 +32,14 @@ DB_NAME = os.getenv("DB_NAME", "oncoscan_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASS = os.getenv("DB_PASSWORD", "postgres")
 
-# =============================================================================
+
 # GESTIONNAIRE DES ARTEFACTS ET DE LA BASE DE DONNÉES
-# =============================================================================
 class AppState:
     """Gestionnaire d'état thread-safe pour les artefacts ML et le pool SQL."""
     model = None
     scaler = None
     db_pool: Optional[pool.SimpleConnectionPool] = None
+
 
 def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.SimpleConnectionPool]:
     """Initialise un pool de connexions PostgreSQL résilient avec retries."""
@@ -49,7 +47,7 @@ def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.SimpleConnec
         try:
             db_pool = pool.SimpleConnectionPool(
                 minconn=1,
-                maxconn=10,  # S'adapte aux requêtes concurrentes de production
+                maxconn=10,  
                 host=DB_HOST,
                 database=DB_NAME,
                 user=DB_USER,
@@ -66,18 +64,20 @@ def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.SimpleConnec
                 return None
     return None
 
-# =============================================================================
+
+
 # CYCLE DE VIE DE L'APPLICATION (LIFESPAN)
-# =============================================================================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Chargement des artefacts de Machine Learning
-    logger.info("Chargement des artefacts de Machine Learning...")
+    # 1. Chargement des artefacts du modèle
+    logger.info("Chargement des artefacts ...")
     try:
         with open(MODEL_PATH, "rb") as f:
             AppState.model = pickle.load(f)
+            
         with open(SCALER_PATH, "rb") as f:
             AppState.scaler = pickle.load(f)
+            
         logger.info("Modèle et Scaler chargés avec succès.")
     except Exception as e:
         logger.critical(f"Erreur critique lors du chargement des modèles : {e}")
@@ -95,17 +95,17 @@ async def lifespan(app: FastAPI):
     AppState.model = None
     AppState.scaler = None
 
+
 # Initialisation FastAPI
 app = FastAPI(
     title="OncoScan AI - API",
-    description="API de production sécurisée pour la prédiction de malignité tumorale.",
+    description="API pour la prédiction de malignité tumorale.",
     version="1.2.0",
     lifespan=lifespan
 )
 
-# =============================================================================
+
 # SCHÉMAS DE VALIDATION (PYDANTIC)
-# =============================================================================
 class PredictionInput(BaseModel):
     texture_worst: float = Field(..., gt=0, description="Valeur extrême de la texture cellulaire")
     area_worst: float = Field(..., gt=0, description="Valeur extrême de la surface cellulaire")
@@ -120,9 +120,8 @@ class PredictionOutput(BaseModel):
     prediction: Literal["M", "B"]
     probability_malignant: float
 
-# =============================================================================
+
 # ENDPOINTS
-# =============================================================================
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
     """Vérification de l'état de santé de l'API et de la dépendance BDD."""
@@ -136,6 +135,7 @@ def health_check():
         "status": "healthy",
         "database_connected": db_ready
     }
+
 
 @app.post("/predict", response_model=PredictionOutput, status_code=status.HTTP_200_OK)
 def predict(data: PredictionInput):
@@ -184,7 +184,7 @@ def predict(data: PredictionInput):
                 logger.error(f"Erreur d'écriture BDD (Transaction annulée) : {db_err}")
             finally:
                 if conn:
-                    AppState.db_pool.putconn(conn)  # On remet impérativement la connexion dans le pool
+                    AppState.db_pool.putconn(conn)  
         else:
             logger.warning("Sauvegarde impossible : Le pool de la base de données est inactif.")
 

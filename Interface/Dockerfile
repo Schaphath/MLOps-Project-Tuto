@@ -1,21 +1,17 @@
-# ==========================================#
-# ÉTAPE 1 : BUILDER (Installation isolée)   #
-# ==========================================#
+# ÉTAPE 1 : BUILDER 
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Copier le fichier des dépendances 
+# Copier le fichier requirements-streamlit.txt
 COPY requirements-streamlit.txt .
 
-# Installation des librairies indispensables 
+# Installation des packages dans le fichier requirements-streamlit.txt 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements-streamlit.txt
     
 
-# ==================================#
-# ÉTAPE 2 : RUNTIME (Image finale)  #
-# ==================================#
+# ÉTAPE 2 : RUNTIME
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app

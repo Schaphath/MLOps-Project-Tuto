@@ -1,11 +1,10 @@
-# ==========================================#
 # ÉTAPE 1 : BUILDER (Installation isolée)   #
-# ==========================================#
+
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Copie uniquement le fichier des dépendances
+# Copie uniquement le requirements-prod.txt
 COPY requirements-prod.txt .
 
 # Installation des paquets dans un dossier local isolé 
@@ -13,9 +12,8 @@ COPY requirements-prod.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --user -r requirements-prod.txt
 
-# ===============================================#
-# ÉTAPE 2 : RUNTIME (Image finale ultra-légère)  #
-# ===============================================#
+
+# ÉTAPE 2 : RUNTIME 
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
@@ -26,7 +24,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Récupération uniquement des dépendances installées à l'étape 1
 COPY --from=builder /root/.local /home/appuser/.local
 
-# Copie du code de l'API et le dossier des modèles
+# Copie du code de l'API et le dossier Save_models
 #COPY --chown=appuser:appuser ./Api/api.py .
 COPY --chown=appuser:appuser ./Api/api_modif.py .
 COPY --chown=appuser:appuser ./Save_models/ ./save_models/

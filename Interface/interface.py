@@ -2,21 +2,19 @@ import os
 import requests
 import streamlit as st
 
-# =============================================================================
+
 # CONFIGURATION DE LA PAGE STREAMLIT
-# =============================================================================
 st.set_page_config(
-    page_title="OncoScan AI - Dashboard",
-    page_icon="🩺",
+    page_title="OncoScan AI",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
+# Api url
 API_URL = os.getenv("API_URL", "http://api:8000/predict")
 
-# =============================================================================
+
 # CONFIGURATION ET CHARGEMENT DU CLIENT HTTP PERSISTANT
-# =============================================================================
 @st.cache_resource
 def get_http_session() -> requests.Session:
     """Instancie une session HTTP réutilisable (Connexion HTTP Keep-Alive)."""
@@ -25,52 +23,44 @@ def get_http_session() -> requests.Session:
 
 http_client = get_http_session()
 
-# =============================================================================
-# MÉTADONNÉES DES CARACTÉRISTIQUES (FEATURES)
-# =============================================================================
+
+# MÉTADONNÉES 
 FEATURES_META = {
     "texture_worst": {
         "label": "texture_worst",
         "min": 10.0, "max": 50.0, "default": 25.41,
         "format": "%.2f", 
-
     },
     "area_worst": {
         "label": "area_worst",
         "min": 100.0, "max": 4500.0, "default": 880.58,
         "format": "%.2f", 
-
     },
     "smoothness_worst": {
         "label": "smoothness_worst",
         "min": 0.05, "max": 0.25, "default": 0.1324,
         "format": "%.4f", 
     },
-    
     "compactness_worst": {
         "label": "compactness_worst",
         "min": 0.02, "max": 1.20, "default": 0.2542,
         "format": "%.4f", 
     },
-    
     "concavity_worst": {
         "label": "concavity_worst",
         "min": 0.0, "max": 1.30, "default": 0.2722,
         "format": "%.4f", 
     },
-    
     "concave_points_worst": {
         "label": "concave_points_worst",
         "min": 0.0, "max": 0.30, "default": 0.1146,
         "format": "%.4f", 
     },
-    
     "symmetry_worst": {
         "label": "symmetry_worst",
         "min": 0.10, "max": 0.70, "default": 0.2901,
         "format": "%.4f", 
     },
-    
     "fractal_dimension_worst": {
         "label": "fractal_dimension_worst",
         "min": 0.05, "max": 0.25, "default": 0.0839,
@@ -79,9 +69,7 @@ FEATURES_META = {
 }
 
 
-# =============================================================================
-# INJECTION DES STYLES CSS (PRODUCTION THEME)
-# =============================================================================
+# INJECTION DES STYLES CSS 
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
@@ -173,23 +161,23 @@ hr { border-color: #1a2a42 !important; margin: 1.4rem 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# =============================================================================
-# EN-TÊTE ET BANNIÈRE PRINCIPALE
-# =============================================================================
+
+# EN-TÊTE 
 st.markdown("""
 <div class="hero-banner">
-    <h2 class="hero-title">   🩺 OncoScan <span>AI  </span></h2>
+    <h2 class="hero-title"> 🩺 OncoScan <span>AI </span></h2>
     <p class="hero-subtitle">
         Renseignez vos informations médicales et obtenez une évaluation
         instantanée du risque de malignité via notre modèle IA.
     </p>
-    
 </div>
 """, unsafe_allow_html=True)
 
-# =============================================================================
-# FORMULAIRE DE COLLECTE DES CARACTÉRISTIQUES CELLULAIRES
-# =============================================================================
+
+# INITIALISATION SÉCURISÉE DE LA VARIABLE SUBMITTED
+submitted = False
+
+# FORMULAIRE DE COLLECTE
 with st.form(key="oncoscan_form", clear_on_submit=False):
 
     st.markdown("""
@@ -218,22 +206,19 @@ with st.form(key="oncoscan_form", clear_on_submit=False):
     st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
     st.caption("⚠️ Outil d'aide à la décision clinique — ne remplace pas l'avis d'un professionnel de santé.")
 
-    # FIX : Remis à l'intérieur du bloc 'with st.form' pour éliminer l'alerte de bouton manquant
+    # Attribution de la variable à l'intérieur du formulaire
     submitted = st.form_submit_button(
         label="Lancer l'analyse",
         use_container_width=True,
     )
 
-# =============================================================================
-# CONTENEUR DE SORTIE (Placé juste sous le formulaire pour un flux naturel)
-# =============================================================================
+
+# CONTENEUR DE SORTIE 
 output_container = st.container()
 
-# =============================================================================
-# TRAITEMENT CLINIQUE ET INFÉRENCE VIA L'API
-# =============================================================================
+
+# APPEL DE L'API REST
 if submitted:
-    # On force l'écriture des résultats et des spinners exclusivement dans le conteneur du bas
     with output_container:
         with st.spinner("Résultats en cours…"):
             try:
@@ -260,7 +245,6 @@ if submitted:
                         <div class="prob-bar-wrap">
                             <div class="prob-bar-fill prob-bar-malignant" style="width:{prob_pct:.1f}%"></div>
                         </div>
-                      
                     </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -278,27 +262,24 @@ if submitted:
                         <div class="prob-bar-wrap">
                             <div class="prob-bar-fill prob-bar-benign" style="width:{gauge_fill_pct:.1f}%"></div>
                         </div>
-                        
                     </div>
                     """, unsafe_allow_html=True)
 
-                
-
             except requests.exceptions.ConnectionError:
-                st.error("🔌 **Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
+                st.error("**Erreur de connexion** — Impossible de joindre l'API OncoScan. Vérifiez que le conteneur API FastAPI est démarré.")
             except requests.exceptions.Timeout:
-                st.error("**Délai dépassé** — L'API n'a pas répondu dans le délai imparti (10 s).")
+                st.error("**Délai dépassé** — L'API n'a pas répondu dans le délai imparti.")
             except requests.exceptions.HTTPError as http_err:
                 st.error(f"**Erreur HTTP {response.status_code}** — Détail : `{http_err}`")
             except (KeyError, ValueError) as parse_err:
                 st.error(f"**Erreur de parsing** — Format de réponse inattendu : `{parse_err}`")
 
-# =============================================================================
+
 # PIED DE PAGE INTERFACE
-# =============================================================================
 st.markdown("""
 <div class="app-footer">
-    OncoScan AI · Modèle entraîné sur le <em>Wisconsin Breast Cancer Dataset</em> (UCI)<br>
-    À usage de démonstration uniquement — non certifié CE/FDA · © 2026 OncoScan AI
+    OncoScan AI · Modèle entraîné sur le <em>Wisconsin Breast Cancer Dataset</em> (kaggle)<br>
+    À usage de démonstration uniquement — non certifié CE/FDA · © 2026 OncoScan AI<br>
+    Auteur : @Madiba
 </div>
 """, unsafe_allow_html=True)
