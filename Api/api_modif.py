@@ -3,11 +3,11 @@ import os
 import time
 import pickle
 import logging
-import numpy as np
 from pathlib import Path
 from typing import Literal, Optional
 from contextlib import asynccontextmanager
 
+import numpy as np
 import psycopg2
 from psycopg2 import pool
 from pydantic import BaseModel, Field
@@ -45,17 +45,17 @@ DB_PASS = os.getenv("DB_PASSWORD", "postgres")
 
 # GESTIONNAIRE DES ARTEFACTS ET DE LA BASE DE DONNÉES
 class AppState:
-    """Gestionnaire d'état thread-safe pour les artefacts ML et le pool SQL."""
+    """Gestionnaire d'état pour les artefacts ML et le pool SQL."""
     model = None
     scaler = None
-    db_pool: Optional[pool.SimpleConnectionPool] = None
+    db_pool: Optional[pool.ThreadedConnectionPool] = None
 
 
-def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.SimpleConnectionPool]:
+def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.ThreadedConnectionPool]:
     """Initialise un pool de connexions PostgreSQL résilient avec retries."""
     for i in range(retries):
         try:
-            db_pool = pool.SimpleConnectionPool(
+            db_pool = pool.ThreadedConnectionPool(
                 minconn=1,
                 maxconn=10,
                 host=DB_HOST,
@@ -68,11 +68,14 @@ def init_db_pool(retries: int = 5, delay: int = 3) -> Optional[pool.SimpleConnec
         except psycopg2.OperationalError as e:
             if i < retries - 1:
                 logger.warning(
-                    f"Base de données inaccessible ({e}). Nouvelle tentative dans {delay}s... ({i+1}/{retries})"
+                    f"Base de données inaccessible ({e}). "
+                    f"Nouvelle tentative dans {delay}s... ({i + 1}/{retries})"
                 )
                 time.sleep(delay)
             else:
-                logger.critical("Impossible d'initialiser le pool PostgreSQL après plusieurs tentatives.")
+                logger.critical(
+                    "Impossible d'initialiser le pool PostgreSQL après plusieurs tentatives."
+                )
                 return None
     return None
 
@@ -170,7 +173,7 @@ def predict(data: PredictionInput):
         prediction_label = "M" if pred_raw == 1 else "B"
         probability_pct = round(prob_malignant * 100, 2)
 
-        # 2. Persistance asynchrone / thread-safe via le Pool
+        # 2. Persistance via le Pool Thread-Safe
         if AppState.db_pool:
             conn = None
             try:
@@ -179,8 +182,8 @@ def predict(data: PredictionInput):
                     query = """
                         INSERT INTO predictions (
                             texture_worst, area_worst, smoothness_worst, compactness_worst,
-                            concavity_worst, concave_points_worst, symmetry_worst, fractal_dimension_worst,
-                            prediction, probability_pct
+                            concavity_worst, concave_points_worst, symmetry_worst,
+                            fractal_dimension_worst, prediction, probability_pct
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                     """
                     cursor.execute(
@@ -216,4 +219,5 @@ def predict(data: PredictionInput):
         logger.error(f"Erreur interne lors du traitement : {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Une erreur interne est survenue lors du calcul de la prédiction.")
+            detail="Une erreur interne est survenue lors du calcul de la prédiction."
+        )
