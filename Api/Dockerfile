@@ -25,8 +25,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 COPY --from=builder /root/.local /home/appuser/.local
 
 # Copie du code de l'API et le dossier Save_models
-#COPY --chown=appuser:appuser ./Api/api.py .
-COPY --chown=appuser:appuser ./Api/api_modif.py .
+COPY --chown=appuser:appuser ./Api/api.py .
 COPY --chown=appuser:appuser ./Save_models/ ./save_models/
 
 # Configuration des variables d'environnement 
@@ -41,6 +40,4 @@ USER appuser
 EXPOSE 8000
 
 # Lancement de l'API
-# CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
-
-CMD ["uvicorn", "api_modif:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]

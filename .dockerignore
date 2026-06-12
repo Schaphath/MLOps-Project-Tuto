@@ -1,0 +1,17 @@
+__pycache__/
+.ipynb_checkpoints/
+.pytest_cache/
+.vscode/
+.venv/
+.dockerignore 
+Notebook/
+Ressources_docker/
+Tests/
+Tests_results/
+Evaluate_results
+Data/
+.github/
+Model/
+README.md
+commandes_git.txt
+.gitignore

@@ -11,23 +11,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from pathlib import Path
-from sklearn.metrics import (
-    recall_score,
-    precision_score,
-    f1_score,
-    roc_auc_score,
-    confusion_matrix,
-    ConfusionMatrixDisplay,
-)
+from sklearn.metrics import (recall_score, precision_score, f1_score, roc_auc_score,
+    confusion_matrix, ConfusionMatrixDisplay)
 
 
-# Seuil (en dessous de se seuil, ALERTE !!!!!)
+# Seuil (en dessous de se seuil, ALERTE !)
 SEUIL_RECALL = 0.90 
 
 
 # Fonction d'évaluation 
 def evaluate(data_path = "Data/evaluate/cancer_eval.csv", models_dir = "Save_models",
-             output_dir = "Save_models", save_fig = True):
+             output_dir = "Evaluate_results", save_fig = True):
     """
     Evalue le modele sauvegardé sur de nouvelles données.
 
@@ -174,7 +168,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluation du modèle cancer du sein")
     parser.add_argument("--data", default="Data/evaluate/cancer_eval.csv")
     parser.add_argument("--models_dir", default="Save_models")
-    parser.add_argument("--output_dir", default="Save_models")
+    parser.add_argument("--output_dir", default="Evaluate_results")
     parser.add_argument("--no_fig", action="store_true")
     args = parser.parse_args()
 
@@ -193,18 +187,3 @@ if __name__ == "__main__":
     print("Validation reussie. Deploiement autorise.")
     sys.exit(0)
     
-    
-    
-    
-    
-    
-"""
-# Conclusion : 
-
-# Modèle près pour la production. 
-# Mais attention, en raison du nombre de ligne reduit dans notre dataset. Il serait judicieux de faire attention à ces métriques. 
-# Il se pourrait que le modèle est pu voir les mêmes données plusieurs fois. 
-# Il faudra collerder d'avantage de données et tester réellement les performance de ce modèle et temps réel. 
-# our une approche pédagogique la démarche reste correcte.
-
-""" 

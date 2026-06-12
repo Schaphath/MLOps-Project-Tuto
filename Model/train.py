@@ -57,7 +57,7 @@ def compare_models(df, target_col="diagnosis", test_size=0.2, random_state=42, s
 
 
     #============================#
-    #  Mise a l echelle MinMax   #
+    #  Mise a l'echelle MinMax   #
     #============================#
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -139,7 +139,7 @@ def compare_models(df, target_col="diagnosis", test_size=0.2, random_state=42, s
 
 
     #============================================#
-    #    Rapport deéaille du meilleur modèle     #
+    #    Rapport détaillé du meilleur modèle     #
     #============================================#
     best_model_name = results_df.iloc[-1]["Model"]
     best_model = trained_models[best_model_name]
@@ -330,5 +330,4 @@ if __name__ == "__main__":
 # Specificite: 1.0000 (72/72 benins ignorés a raison)
 
 
-# Conclusion : Les objectifs de performance ont été atteints.
 

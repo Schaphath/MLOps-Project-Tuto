@@ -2,10 +2,8 @@ __pycache__/
 .ipynb_checkpoints/
 .pytest_cache/
 .vscode/
-venv/
-.dockerignore 
-.env
-debug_git.txt
+.venv/
+commandes_git.txt
 
 
 

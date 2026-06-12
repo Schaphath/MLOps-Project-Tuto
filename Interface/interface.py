@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Api url
+# API URL
 API_URL = os.getenv("API_URL", "http://api:8000/predict")
 
 

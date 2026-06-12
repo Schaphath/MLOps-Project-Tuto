@@ -22,8 +22,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Récupération des dépendances installées à l'étape 1
 COPY --from=builder /root/.local /home/appuser/.local
 
-# COPY --chown=appuser:appuser ./Interface/app_stream.py ./app.py
-COPY --chown=appuser:appuser ./Interface/interface.py ./app.py
+COPY --chown=appuser:appuser ./Interface/interface.py ./interface.py
 
 
 # Variables d'environnement indispensables
@@ -37,5 +36,5 @@ USER appuser
 # Port découte Streamlit
 EXPOSE 8501
 
-# lancement de l'interface web
-CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+# Lancement de l'interface web
+CMD ["streamlit", "run", "interface.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
